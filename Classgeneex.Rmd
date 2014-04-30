@@ -1,0 +1,88 @@
+Classification of samples by gene expression data
+========================================================
+
+Dr. Susanne Weller
+29/04/2013
+
+Import and transform data
+
+```{r}
+testpanel <- as.data.frame(read.table("HKPanel.csv", header=TRUE))
+testpanel$Accession <- NULL
+testpanel$Class_Name <- NULL
+testpanel$Species_Name <- NULL
+testpanel$Probe_Name <- NULL
+testpanel$Avg_Count <- NULL
+testpanel$Min_Count <- NULL
+testpanel$Max_Count <- NULL
+testpanel$X.CV <- NULL
+
+
+# Transpose table YOU WANT
+ttestpanel <- as.data.frame(t(testpanel[,2:ncol(testpanel)]))
+
+# Set the column headings
+colnames(ttestpanel) <- testpanel$Gene
+ttestpanel$sample <- row.names(ttestpanel)
+row.names(ttestpanel) <- NULL 
+```
+
+Unsupervised classification methods for gene expression data
+------------------------------------------------------------
+
+### Pricipal component analysis
+
+```{r}
+pca.out=prcomp((ttestpanel[1:32]),scale=TRUE)
+pca.out
+names(pca.out)
+biplot(pca.out, scale=0)
+
+```
+### PCA Using FactoMinR
+
+-This gives a much nicer plot
+-dimdesc(pca) tells you the most important variables, which could be used to sort data to create a heat map that shows both clusters nicely.
+
+```{r}
+require(FactoMineR) 
+# PCA with function PCA
+
+pca <- PCA(ttestpanel[1:32], scale.unit=TRUE, ncp=5, graph=T)
+#scale all the features,  ncp: number of dimensions kept in the results (by default 5)
+
+gene_load <- dimdesc(pca)
+gene_load
+gene_importance <- as.data.frame(gene_load$Dim.1$quanti)
+gene_importance$gene <-row.names(gene_importance)
+row.names(gene_importance) <- NULL
+#This line of code will sort the variables the most linked to each PC. It is very useful when you have many variables.
+```
+
+### k-means clustering
+- this will always give a clustering an should only be used as a control!
+
+```{r}
+
+km.out=kmeans(ttestpanel[1:32],2,nstart=30)
+km.out
+
+```
+
+Heatmap using the "heatmap"" function
+-----------------------------------------
+- This needs the genes to be the rownames!
+```{r}
+heattestpanel <- testpanel
+rownames(heattestpanel) <- testpanel$Gene
+heattestpanel$Gene <- NULL
+
+heattestpanel = as.numeric(heattestpanel)
+heatmap(as.matrix(heattestpanel,rownames.force=TRUE))
+```
+
+Heatmap using "gplot" package
+```{r}
+library("gplots")
+heattestpanel = as.numeric(heattestpanel)
+heatmap.2((as.matrix(heattestpanel, rownames.force=TRUE)), col=greenred(75), scale="row", key=TRUE, symkey=FALSE, density.info="none", trace="none", cexRow=0.5)
