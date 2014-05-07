@@ -2,36 +2,41 @@ Classification of samples by gene expression data
 ========================================================
 
 Dr. Susanne Weller
-06/05/2014
+29/04/2013
 
 Import and transform data
 
 ```{r}
-genex <- as.data.frame(read.csv("/home/suska/work/Geneex/ClassGeneex/Geneex_full.csv", header=TRUE, quote="", sep="\t"))
-genex <- subset(genex, genex$Class_Name == "Endogenous")
-
-genex$Class_Name <- NULL
+testpanel <- as.data.frame(read.table("HKPanel.csv", header=TRUE))
+testpanel$Accession <- NULL
+testpanel$Class_Name <- NULL
+testpanel$Species_Name <- NULL
+testpanel$Probe_Name <- NULL
+testpanel$Avg_Count <- NULL
+testpanel$Min_Count <- NULL
+testpanel$Max_Count <- NULL
+testpanel$X.CV <- NULL
 
 
 # Transpose table YOU WANT
-tgenex <- as.data.frame(t(genex[,2:ncol(genex)]))
+ttestpanel <- as.data.frame(t(testpanel[,2:ncol(testpanel)]))
 
 # Set the column headings
-colnames(tgenex) <- genex$Gene_Name
-tgenex$sample <- row.names(tgenex)
-row.names(tgenex) <- NULL 
+colnames(ttestpanel) <- testpanel$Gene
+ttestpanel$sample <- row.names(ttestpanel)
+row.names(ttestpanel) <- NULL 
 ```
 
-Unsupervised classification of patients using gene expression data
+Unsupervised classification methods for gene expression data
 ------------------------------------------------------------
 
 ### Pricipal component analysis
 
 ```{r}
-pca.out=prcomp((genex[2:49]),scale=TRUE)
+pca.out=prcomp((ttestpanel[1:32]),scale=TRUE)
 pca.out
 names(pca.out)
-biplot(pca.out, scale=0.5)
+biplot(pca.out, scale=0)
 
 ```
 ### PCA Using FactoMinR
@@ -43,12 +48,11 @@ biplot(pca.out, scale=0.5)
 require(FactoMineR) 
 # PCA with function PCA
 
-pca <- PCA(genex[2:30], scale.unit=TRUE, ncp=5, graph=T)
+pca <- PCA(ttestpanel[1:32], scale.unit=TRUE, ncp=5, graph=T)
 #scale all the features,  ncp: number of dimensions kept in the results (by default 5)
 
 gene_load <- dimdesc(pca)
 gene_load
-write.table(gene_load$Dim.1, "Geneload.tsv")
 gene_importance <- as.data.frame(gene_load$Dim.1$quanti)
 gene_importance$gene <-row.names(gene_importance)
 row.names(gene_importance) <- NULL
@@ -60,7 +64,7 @@ row.names(gene_importance) <- NULL
 
 ```{r}
 
-km.out=kmeans(tgenex[1:38],2,nstart=30)
+km.out=kmeans(ttestpanel[1:32],2,nstart=30)
 km.out
 
 ```
@@ -69,22 +73,16 @@ Heatmap using the "heatmap"" function
 -----------------------------------------
 - This needs the genes to be the rownames!
 ```{r}
-heatgenex <- genex
-rownames(heatgenex) <- heatgenex$Gene_Name
-heatgenex$Gene_Name <- NULL
+heattestpanel <- testpanel
+rownames(heattestpanel) <- testpanel$Gene
+heattestpanel$Gene <- NULL
 
-heatgenex = as.numeric(heatgenex)
-heatmap(as.matrix(heatgenex,rownames.force=TRUE))
-
-# For the bar on top:
-color.map <- function(mol.biol) { if (mol.biol=="ALL1/AF4") "#FF0000" else "#0000FF" }
-patientcolors <- unlist(lapply(esetSel$mol.bio, color.map))
-heatmap(exprs(esetSel), col=topo.colors(100), ColSideColors=patientcolors)
+heattestpanel = as.numeric(heattestpanel)
+heatmap(as.matrix(heattestpanel,rownames.force=TRUE))
 ```
 
 Heatmap using "gplot" package
 ```{r}
 library("gplots")
-heatgenex = as.numeric(heatgenex)
-heatmap.2((as.matrix(heatgenex, rownames.force=TRUE)), col=bluered(75), scale="row", key=TRUE, symkey=FALSE, density.info="none", trace="none", cexRow=0.5, xlab="individuals",
-ylab="genes")
+heattestpanel = as.numeric(heattestpanel)
+heatmap.2((as.matrix(heattestpanel, rownames.force=TRUE)), col=greenred(75), scale="row", key=TRUE, symkey=FALSE, density.info="none", trace="none", cexRow=0.5)
